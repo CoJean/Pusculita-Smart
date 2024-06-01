@@ -1,0 +1,63 @@
+#include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
+
+LiquidCrystal_I2C lcd(0x27, 20, 2); // set the LCD address to 0x27 for a 20 chars and 2 line display
+SoftwareSerial mySerial(8, 7); // RX, TX - asigură-te că folosești pinii corecți
+
+#define _10SEN 4
+#define _50SEN 5
+#define PIEZO  8
+
+int count_10SEN = 0;
+int count_50SEN = 0;
+
+int curr_state_10SEN = HIGH;
+int prev_state_10SEN = HIGH;
+int curr_state_50SEN = HIGH;
+int prev_state_50SEN = HIGH;
+
+void intro() {
+  lcd.setCursor(2, 0);
+  lcd.print("COIN SORTING");
+  delay(2000);
+  lcd.clear();
+}
+
+void setup() {
+  lcd.init();
+  lcd.backlight();
+  intro();
+  lcd.setCursor(0, 0);
+  lcd.print("10  50 bani");
+
+  mySerial.begin(9600); // Initialize Bluetooth serial communication
+}
+
+void loop() {
+  lcd.setCursor(0, 1);
+  lcd.print(count_10SEN);
+  lcd.setCursor(4, 1);
+  lcd.print(count_50SEN);
+
+  curr_state_10SEN = digitalRead(_10SEN);
+  curr_state_50SEN = digitalRead(_50SEN);
+
+  if (curr_state_10SEN == LOW && prev_state_10SEN == HIGH) {
+    count_10SEN++;
+    sendDataToBluetooth();
+  }
+  if (curr_state_50SEN == LOW && prev_state_50SEN == HIGH) {
+    count_50SEN++;
+    sendDataToBluetooth();
+  }
+
+  prev_state_10SEN = curr_state_10SEN;
+  prev_state_50SEN = curr_state_50SEN;
+}
+
+void sendDataToBluetooth() {
+  mySerial.print("10 bani: ");
+  mySerial.print(count_10SEN);
+  mySerial.print(", 50 bani: ");
+  mySerial.println(count_50SEN);
+}
